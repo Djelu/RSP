@@ -1,0 +1,51 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Rock, Scissors, Paper vs You</title>
+		<link href="css/styles.css" rel="stylesheet" type="text/css" />
+		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+	</head>
+	<body>
+
+		<div>
+            <div id="boxes" class="boxes">
+                <div><img id="back" class="back" src="images/back.png" alt=""></div>
+                <div class="box player heightBottom" id="playerSide">
+					<div><img class="heightCenter" id="playerSelectedType" src="" alt=""/></div>
+					<div id="myHands" class="imgDown">
+						<table>
+							<tr>
+                                <td>
+                                    <img class="imgSize" name="rock" src="images/Н_Камень.png" alt="Булочка">
+                                </td>
+                                <td>
+                                    <img class="imgSize" name="scissors" src="images/Н_Ножницы.png" alt="Ножницы">
+                                </td>
+                                <td>
+                                    <img class="imgSize" name="paper" src="images/Н_Бумага.png" alt="Бумага">
+                                </td>
+                            </tr>
+						</table>
+					</div>
+				</div>
+				<div class="box enemy" id="enemySide">
+					<div id="enemyHand" style="display: none">
+						<img id="enemySelectedType" src="" alt=""/>
+					</div>
+					<div id="enemyAddress">
+						<p class="addressText">Адрес соперника</p>
+                        <input id="addressInput" class="addressInput" value="">
+					</div>
+                    <div id="addresses" class="enemyAddressesList"></div>
+				</div>
+			</div>
+			<!--<div class="buttons">-->
+				<!--<div id="restart" class="widthCenter">-->
+					<!--<a href="" class="button">Ещё</a>-->
+				<!--</div>-->
+			<!--</div>-->
+		</div>
+
+		<script type="text/javascript" src="js/scripts.js"></script>
+	</body>
+</html>
