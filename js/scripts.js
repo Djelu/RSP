@@ -1,133 +1,234 @@
-//Проводим первоначальную настройку
-function init() {
+let canvas = document.getElementById('canvas');
+let context = canvas.getContext('2d');
 
-    var $back = $('#back');
-    $back.on('click', toBack);
-    $back.css('display','none');
+let curWidth;
+let curHeight;
 
-    $('.box.player .imgSize').each(function () {
-        let $this = $(this);
-        const imgName = $this.attr('name');
-        $this.on('click', function () {
-            let src = null;
-            switch (imgName) {
-                case 'rock': src = 'images/Л_Камень.png'; break;
-                case 'scissors': src = 'images/Л_Ножницы.png'; break;
-                case 'paper': src = 'images/Л_Бумага.png'; break;
-            }
+const Color = {ORANGE:"rgb(185,122,87)", GREEN:"rgb(104,169,139)", BLACK:"rgb(0,0,0)", YELLOW:"rgb(213,181,134)", PINK:"rgb(196,140,111)"};
+const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
+const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
+const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
+const Font = {TIME_NEW_ROMAN:"Times New Roman"};
 
-            if(src) {
-                $('#playerSelectedType').attr('src', src);
-                $('#myHands').css('display', 'none');
-                $('#playerSide').removeClass('heightBottom');
-            }else{
-                $('#playerSelectedType').attr('src','');
-            }
+let curPlayerState = PlayerState.FIGURE_CHOICE;
+let curEnemyState = EnemyState.WAIT_ENEMY_CHOICE;
 
-            $('#back').css('display','block');
-        });
-    });
+window.addEventListener('resize', resizeCanvas, false);
+resizeCanvas();
 
-    let $enemyAddress = $('#enemyAddress input');
-    $enemyAddress.keyup(function (event) {
-        if(event.which == 13){
-            const address = $enemyAddress.val();
-            setWaiting();
-            getEnemy(address);
+function resizeCanvas() {
+    canvas.width = curWidth = window.innerWidth;
+    canvas.height = curHeight = window.innerHeight;
+    draw();
+}
+
+function triangle(pars, color) {
+    if(pars && pars.length==3){
+        if(pars[0] && pars[0].length==2 &&
+            pars[1] && pars[1].length==2 &&
+            pars[2] && pars[2].length==2)
+        {
+            context.fillStyle = color;
+            context.beginPath();
+            context.moveTo(pars[0][0], pars[0][1]);
+            context.lineTo(pars[1][0], pars[1][1]);
+            context.lineTo(pars[2][0], pars[2][1]);
+            context.fill();
         }
-    });
-
-    let table = $(document.createElement("table")).append($(document.createElement("tbody")));
-
-    const rows = getAddresses();
-    for(let i=0; i<rows.length; i++){
-        const row = rows[i];
-        const index = i + ".";
-
-        let $tr = $(document.createElement("tr"));
-        $tr.html(
-            "<td class='index'>" + index + "</td>" +
-            "<td class='address'>" + row.address + "</td>" +
-            "<td class='price'>" + row.price + "</td>"
-        );
-        $tr.addClass("row");
-        $tr.on('click', function () {
-            setWaiting();
-            getEnemy(row.address);
-            $('#addresses').css('display', 'none');
-        });
-
-        table.append($tr);
     }
-
-    $('#addresses').append(table);
 }
-
-function toBack() {
-    $('#back').css('display','none');
-    $('#playerSelectedType').attr('src','');
-    $('#myHands').css('display', 'block');
-
-    $('#playerSelectedType').css('vertical-align','bottom')
+function clearRect(x, y, w, h){
+    context.clearRect(x, y, w, h);
 }
-
-//Отсылаем на сервер в 6 ячейке пару цифр, соответствующих выбору игрока
-function sendData(type) {
-
-    let num = '00';
-    switch (type) {
-        case 'rock': num = '01'; break;
-        case 'scissors': num = '02'; break;
-        case 'paper': num = '03'; break;
+function strokeRect(x, y, w, h){
+    context.strokeRect(x, y, w, h);
+}
+function xfillRect(x, y, w, h, rgb) {
+    if(rgb && [3,4].includes(rgb.length)){
+        context.fillStyle = rgb.length==3 ? 'rgb('+rgb[0]+','+rgb[1]+','+rgb[2]+')'
+                                          :'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+rgb[3]+')';
     }
-
-    const data = '090807060504'+num+'0201';
-
-    //тут отправка data
-
+    context.fillRect(x, y, w, h);
 }
 
-//Показываем выбор соперника, в соответствии с num
-function enemyChoice(num) {
-    let $enemySelectedType = $('#enemySelectedType');
-    switch (num) {
-        case '01': $enemySelectedType.attr('src', 'images/П_Камень.png'); break;
-        case '02': $enemySelectedType.attr('src', 'images/П_Ножницы.png'); break;
-        case '03': $enemySelectedType.attr('src', 'images/П_Бумага.png'); break;
+function fillRect(pos, w, h, color) {
+    if(pos.length == 2) {
+        if(color) {
+            context.fillStyle = color;
+        }
+        context.fillRect(pos[0], pos[1], w, h);
     }
-    $('#enemyHand').css('display', 'block');
+}
+function fillText(text, pos, settings) {
+    if(pos.length == 2 && text != ""){
+        if(settings) {
+            if(settings.fontStyle && Number.isInteger(settings.fontStyle.px) && settings.fontStyle.style){
+                context.font = settings.fontStyle.px + 'px ' + settings.fontStyle.style;
+            }
+            if (settings.color) {
+                context.fillStyle = settings.color;
+            }
+        }
+        context.fillText(text, pos[0], pos[1]);
+    }
+}
+function createImg(src, pos, w, h) {
+    if(src && src !="" && pos.length==2) {
+        let img = new Image();
+        img.src = src;
+        img.onload = function () {
+            context.fillStyle = context.createPattern(img, 'no-repeat');
+            context.fillRect(0, 0, w, h);
+        }
+    }
 }
 
-//Ожидаем загрузки соперника, ставим многоточие
-function setWaiting() {
-    $('#enemyAddress').css('display', 'none');
-    $('#enemyHand').css('display', 'block');
-    $('#enemySelectedType').attr('src', 'images/Точки.png');
+
+function plusVector(pars, vector) {
+    let result = pars;
+    if(Array.isArray(pars[0])){
+        for (let i=0; i<pars.length; i++) {
+            if(pars[i].length==2 && vector.length==2){
+                result[i][0] = pars[i][0]+vector[0];
+                result[i][1] = pars[i][1]+vector[1];
+            }
+        }
+    }else{
+        result[0] = pars[0]+vector[0];
+        result[1] = pars[1]+vector[1];
+    }
+    return result;
 }
 
-//Соперник выбрал что-то, ставим вопрос
-function setEnemyChoiced() {
-    $('#enemySelectedType').attr('src', 'images/Вопрос.png');
+function drawObject(objType, argsObj) {//Рисуем объект согласно переданному типу
+    
+    const halfWidth = curWidth/2;
+    const mainAddressWidth = curWidth/3;//Ширина панели адреса
+    const enemyBetWidth = mainAddressWidth/12;//Ширина вражеской ставки
+    const mainAddressHeight = curHeight/22;//Высота панели адреса
+    const indentFromCenterX = (halfWidth-mainAddressWidth)/2;//Отступ от центра для списка адресов
+    const indent = mainAddressHeight/3;//отступ между адресами
+
+    switch (objType) {
+        case ObjectType.MAIN_PARTS:{
+            fillRect([0,0], halfWidth, curHeight, Color.ORANGE);
+            fillRect([halfWidth,0], halfWidth, curHeight, Color.GREEN);
+        }break;
+        case ObjectType.BUTTON_BACK:{
+            const widthDiv10 = curWidth/10;
+            const heightDiv15 = curHeight/15;
+            const heightDiv45 = heightDiv15/3;
+            const widthDiv20 = widthDiv10/2;
+            fillRect([0,0], widthDiv10, heightDiv15, Color.GREEN);
+            triangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[widthDiv10/3,heightDiv15/2]],[widthDiv20/8, 0]), Color.BLACK);
+        }break;
+        case ObjectType.ENEMY_ADDRESS:{
+            const halfWidth = curWidth/2;
+            const mainAddressPosX = halfWidth+indentFromCenterX;
+            const mainAddressPosY = curHeight/5;
+            fillRect([mainAddressPosX,mainAddressPosY], mainAddressWidth, mainAddressHeight, Color.ORANGE);
+            fillText("Адрес соперника", [mainAddressPosX+mainAddressWidth/8*3, mainAddressPosY-indent], {fontStyle:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK})
+        }break;
+        case ObjectType.ADDRESSES_LIST:{
+            const enemyBetIndentWidth = mainAddressWidth-enemyBetWidth;
+            const mainAddressBlock = curHeight/5+mainAddressHeight+2*indent;//высота панели ввода адреса
+            const height = mainAddressHeight-mainAddressHeight/4;//высота панели выбора адреса
+            const itemAddressBlock = height+indent;//высота панели выбора адреса с отступом
+            const listSize = 10;//Количество строк адресов
+            let pars = [];
+            //Рисуем желтые прямоугольники
+            context.fillStyle = Color.YELLOW;
+            for(let i=0; i<listSize; i++) {
+                const pos = [halfWidth+indentFromCenterX,mainAddressBlock+(itemAddressBlock)*i];
+                fillRect(pos, mainAddressWidth, height);
+                pars.push(pos);
+            }
+            //Рисуем розовые прямоугольники
+            context.fillStyle = Color.PINK;
+            for(let i=0; i<listSize; i++) {
+                fillRect([pars[i][0]+enemyBetIndentWidth,pars[i][1]], enemyBetWidth, height);
+            }
+            //Рисуем текст адресов, если они есть
+            if(argsObj.addresses){
+                const addresses = argsObj.addresses;
+                const addressTextIndentY = height/3*2;
+                const addressTextIndentX = mainAddressWidth/30;
+                const betTextIndentX = enemyBetWidth/10;
+                context.font = "15px "+Font.TIME_NEW_ROMAN;
+                context.fillStyle = Color.BLACK;
+                for (let i=0; i<listSize; i++) {
+                    if(addresses[i] && addresses[i].address){
+                        context.fillText((i+1)+". "+addresses[i].address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
+                        context.fillText(addresses[i].bet+" ETH",pars[i][0]+enemyBetIndentWidth+betTextIndentX,pars[i][1]+addressTextIndentY);
+                    }else{
+                        break;
+                    }
+                }
+            }
+        }break;
+        case ObjectType.BET:{
+
+        }break;
+        case ObjectType.DOTS:{
+
+        }break;
+        case ObjectType.PLAYER_FIGURE:{
+
+        }break;
+        case ObjectType.ENEMY_FIGURE:{
+
+        }break;
+        case ObjectType.THREE_FIGURES:{
+
+        }break;
+    }
 }
 
-function getEnemy(address) {
-    //грузим противника по адресу
+function getEnemyAddresses() {
+    return {addresses:[
+        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0},
+        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:5},
+        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:3}
+        ]}
 }
 
-function getAddresses() {
-    //получаем 10 адресов для вывода
-    return [
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        {address:"0x3ca4917f37360574d8dc0c333333333ce27f54e8", price:"3 ETH"},
-        ];
-}
+function draw() {
+    if(canvas.getContext){
+        //Делим просстранство две половинки
+        drawObject(ObjectType.MAIN_PARTS);
 
-init();
+        //Половинка игрока
+        switch (curPlayerState) {
+            case PlayerState.FIGURE_CHOICE:{
+                //ставка
+                drawObject(ObjectType.BET);
+                //Выбор фигуры
+                drawObject(ObjectType.THREE_FIGURES);
+            }break;
+            case PlayerState.CHOICE_IS_MADE:{
+                //Кнопка назад
+                drawObject(ObjectType.BUTTON_BACK);
+                //Фигура игрока
+                drawObject(ObjectType.PLAYER_FIGURE);
+            }break;
+        }
+
+        //Половинка противника
+        switch (curEnemyState) {
+            case EnemyState.ADDRESS_CHOICE:{
+                //Место для ввода адреса противника
+                drawObject(ObjectType.ENEMY_ADDRESS);
+                //Список адресов
+                drawObject(ObjectType.ADDRESSES_LIST,getEnemyAddresses());
+            }break;
+            case EnemyState.WAIT_ENEMY_CHOICE:{
+                //многоточие
+                drawObject(ObjectType.DOTS);
+            }break;
+            case EnemyState.CHOICE_IS_MADE:{
+                //Фигура противника
+                drawObject(ObjectType.ENEMY_FIGURE);
+            }break;
+        }
+    }
+}
