@@ -4,14 +4,17 @@ let context = canvas.getContext('2d');
 let curWidth;
 let curHeight;
 
+const Figure = {ROCK:"Камень", SCISSORS:"Ножницы", PAPER:"Бумага"};
 const Color = {ORANGE:"rgb(185,122,87)", GREEN:"rgb(104,169,139)", BLACK:"rgb(0,0,0)", YELLOW:"rgb(213,181,134)", PINK:"rgb(196,140,111)"};
 const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
 const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
 const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
 const Font = {TIME_NEW_ROMAN:"Times New Roman"};
 
-let curPlayerState = PlayerState.FIGURE_CHOICE;
-let curEnemyState = EnemyState.WAIT_ENEMY_CHOICE;
+let curPlayerFigure;
+let curEnemyFigure;
+let curPlayerState = PlayerState.CHOICE_IS_MADE;
+let curEnemyState = EnemyState.ADDRESS_CHOICE;
 
 window.addEventListener('resize', resizeCanvas, false);
 resizeCanvas();
@@ -22,13 +25,15 @@ function resizeCanvas() {
     draw();
 }
 
-function triangle(pars, color) {
+function fillTriangle(pars, color) {
     if(pars && pars.length==3){
         if(pars[0] && pars[0].length==2 &&
             pars[1] && pars[1].length==2 &&
             pars[2] && pars[2].length==2)
         {
-            context.fillStyle = color;
+            if(color) {
+                context.fillStyle = color;
+            }
             context.beginPath();
             context.moveTo(pars[0][0], pars[0][1]);
             context.lineTo(pars[1][0], pars[1][1]);
@@ -72,6 +77,16 @@ function fillText(text, pos, settings) {
         context.fillText(text, pos[0], pos[1]);
     }
 }
+function fillCircle(pos, r, color) {
+    if(pos.length==2) {
+        context.beginPath();
+        if (color) {
+            context.fillStyle = color;
+        }
+        context.arc(pos[0], pos[1], r, 0, Math.PI*2, true);
+        context.fill();
+    }
+}
 function createImg(src, pos, w, h) {
     if(src && src !="" && pos.length==2) {
         let img = new Image();
@@ -103,6 +118,7 @@ function plusVector(pars, vector) {
 function drawObject(objType, argsObj) {//Рисуем объект согласно переданному типу
     
     const halfWidth = curWidth/2;
+    const halfHeight = curHeight/2;
     const mainAddressWidth = curWidth/3;//Ширина панели адреса
     const enemyBetWidth = mainAddressWidth/12;//Ширина вражеской ставки
     const mainAddressHeight = curHeight/22;//Высота панели адреса
@@ -120,7 +136,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const heightDiv45 = heightDiv15/3;
             const widthDiv20 = widthDiv10/2;
             fillRect([0,0], widthDiv10, heightDiv15, Color.GREEN);
-            triangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[widthDiv10/3,heightDiv15/2]],[widthDiv20/8, 0]), Color.BLACK);
+            fillTriangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[widthDiv10/3,heightDiv15/2]],[widthDiv20/8, 0]), Color.BLACK);
         }break;
         case ObjectType.ENEMY_ADDRESS:{
             const halfWidth = curWidth/2;
@@ -167,13 +183,54 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             }
         }break;
         case ObjectType.BET:{
-
+            const widthDiv4 = curWidth/4;
+            const widthDiv20 = curWidth/20;
+            const height = mainAddressHeight-mainAddressHeight/4;
+            const widthDiv40 = widthDiv20/2;
+            const betInputPosX = widthDiv4-widthDiv40;
+            const betInputHalfHeight = height/2;
+            const betInputPosY = halfHeight-betInputHalfHeight;
+            //Рисуем текст и прямоугольник
+            fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);
+            fillText("Ставка",[betInputPosX+widthDiv40/16*5,betInputPosY-indent],{fontStyle:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK});
+            //Рисуем кнопки
+            const widthDiv160 = widthDiv20/8;
+            const betLeftButtonPosX = betInputPosX-widthDiv160;
+            const betRightButtonPosX = betInputPosX+widthDiv20+widthDiv160;
+            const betInputHeightDiv4 = betInputHalfHeight/3;
+            const betButtonPosY1 = betInputPosY+betInputHeightDiv4;
+            const betButtonPosY2 = betInputPosY+height-betInputHeightDiv4;
+            const betLeftButtonPosX3 = betLeftButtonPosX-betInputHalfHeight;
+            const betButtonPosY3 = betInputPosY+betInputHalfHeight;
+            const betRightButtonPosX3 = betRightButtonPosX+betInputHalfHeight;
+            fillTriangle([[betLeftButtonPosX,betButtonPosY1],[betLeftButtonPosX,betButtonPosY2],[betLeftButtonPosX3,betButtonPosY3]]);
+            fillTriangle([[betRightButtonPosX,betButtonPosY1],[betRightButtonPosX,betButtonPosY2],[betRightButtonPosX3,betButtonPosY3]]);
         }break;
         case ObjectType.DOTS:{
-
+            const startDotPosX = halfWidth+halfWidth/2;
+            const indentBetweenDots = halfWidth/10;
+            const radius = mainAddressHeight/2;
+            context.fillStyle = Color.ORANGE;
+            fillCircle([startDotPosX,halfHeight], radius);
+            fillCircle([startDotPosX-indentBetweenDots,halfHeight], radius);
+            fillCircle([startDotPosX+indentBetweenDots,halfHeight], radius);
         }break;
         case ObjectType.PLAYER_FIGURE:{
+            //Рисуем фигуру, если её выбрали
+            if(argsObj.figures && argsObj.figures.player) {
 
+                function getSrc(figureType){
+                    let result;
+                    switch (figureType) {
+                        case Figure.ROCK: result = "images/Л_Камень.png"; break;
+                        case Figure.SCISSORS: result = "images/Л_Ножницы.png"; break;
+                        default: result = "images/Л_Бумага.png"; break;
+                    }
+                    return result;
+                }
+
+                createImg(getSrc(argsObj.figures.player),[halfWidth/5,curHeight/7*3], 636,338);
+            }
         }break;
         case ObjectType.ENEMY_FIGURE:{
 
@@ -184,12 +241,19 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
     }
 }
 
+function getFigure() {
+    return {figures:{
+        player:Figure.ROCK,
+        enemy:Figure.SCISSORS
+    }}
+}
+
 function getEnemyAddresses() {
     return {addresses:[
         {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0},
         {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:5},
         {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:3}
-        ]}
+    ]}
 }
 
 function draw() {
@@ -209,7 +273,7 @@ function draw() {
                 //Кнопка назад
                 drawObject(ObjectType.BUTTON_BACK);
                 //Фигура игрока
-                drawObject(ObjectType.PLAYER_FIGURE);
+                drawObject(ObjectType.PLAYER_FIGURE, getFigure());
             }break;
         }
 
