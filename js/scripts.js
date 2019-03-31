@@ -9,12 +9,13 @@ const Color = {ORANGE:"rgb(185,122,87)", GREEN:"rgb(104,169,139)", BLACK:"rgb(0,
 const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
 const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
 const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
-const Font = {TIME_NEW_ROMAN:"Times New Roman"};
+const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial"};
 
-let curPlayerFigure;
-let curEnemyFigure;
-let curPlayerState = PlayerState.CHOICE_IS_MADE;
+let curPlayerFigure = Figure.ROCK;
+let curEnemyFigure = Figure.ROCK;
+let curPlayerState = PlayerState.FIGURE_CHOICE;
 let curEnemyState = EnemyState.ADDRESS_CHOICE;
+let input = {bet:null, enemyAddress:null};
 
 window.addEventListener('resize', resizeCanvas, false);
 resizeCanvas();
@@ -25,6 +26,17 @@ function resizeCanvas() {
     draw();
 }
 
+function colorToHex(color) {
+    function componentToHex(c) {
+        const hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+    function rgbToHex(r, g, b) {
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    }
+    const rgb = color.substring(4, color.length-1).split(",");
+    return rgbToHex(Number(rgb[0]),Number(rgb[1]),Number(rgb[2]));
+}
 function fillTriangle(pars, color) {
     if(pars && pars.length==3){
         if(pars[0] && pars[0].length==2 &&
@@ -51,7 +63,7 @@ function strokeRect(x, y, w, h){
 function xfillRect(x, y, w, h, rgb) {
     if(rgb && [3,4].includes(rgb.length)){
         context.fillStyle = rgb.length==3 ? 'rgb('+rgb[0]+','+rgb[1]+','+rgb[2]+')'
-                                          :'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+rgb[3]+')';
+                                      :'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+','+rgb[3]+')';
     }
     context.fillRect(x, y, w, h);
 }
@@ -64,14 +76,14 @@ function fillRect(pos, w, h, color) {
         context.fillRect(pos[0], pos[1], w, h);
     }
 }
-function fillText(text, pos, settings) {
+function fillText(text, pos, options) {
     if(pos.length == 2 && text != ""){
-        if(settings) {
-            if(settings.fontStyle && Number.isInteger(settings.fontStyle.px) && settings.fontStyle.style){
-                context.font = settings.fontStyle.px + 'px ' + settings.fontStyle.style;
+        if(options) {
+            if(options.font && Number.isInteger(options.font.px) && options.font.style){
+                context.font = options.font.px + 'px ' + options.font.style;
             }
-            if (settings.color) {
-                context.fillStyle = settings.color;
+            if (options.color) {
+                context.fillStyle = options.color;
             }
         }
         context.fillText(text, pos[0], pos[1]);
@@ -92,13 +104,33 @@ function createImg(src, pos, w, h) {
         let img = new Image();
         img.src = src;
         img.onload = function () {
-            context.fillStyle = context.createPattern(img, 'no-repeat');
-            context.fillRect(0, 0, w, h);
+            context.drawImage(img, pos[0], pos[1], w, h);
         }
     }
 }
-
-
+function createInput(pos, w, h, options) {
+    const font = options.font;
+    const border = options.border;
+    return !(pos.length==2&&font&&font.px&&font.style&&options.color)
+        ?null
+        :new CanvasInput({
+            x: pos[0],
+            y: pos[1],
+            width: w,
+            height: h,
+            backgroundColor: options.color,
+            canvas: canvas,
+            fontSize: font.px,
+            fontFamily: font.style,
+            // fontColor: options.color,
+            borderWidth: border&&border.width ?border.width :undefined,
+            borderColor: border&&border.color ?border.color :undefined,
+            borderRadius: border&&border.radius ?border.radius :undefined,
+            // boxShadow: '1px 1px 0px #fff',
+            // innerShadow: '0px 0px 5px rgba(0, 0, 0, 0.5)',
+            // placeHolder: defText
+        });
+}
 function plusVector(pars, vector) {
     let result = pars;
     if(Array.isArray(pars[0])){
@@ -111,6 +143,25 @@ function plusVector(pars, vector) {
     }else{
         result[0] = pars[0]+vector[0];
         result[1] = pars[1]+vector[1];
+    }
+    return result;
+}
+function getSrc(figure){
+    let result;
+    if(figure){
+        if(figure.player){
+            switch (figure.player) {
+                case Figure.ROCK: result = "images/Л_Камень.png"; break;
+                case Figure.SCISSORS: result = "images/Л_Ножницы.png"; break;
+                default/*Figure.PAPER*/: result = "images/Л_Бумага.png"; break;
+            }
+        }else{
+            switch (figure.enemy) {
+                case Figure.ROCK: result = "images/П_Камень.png"; break;
+                case Figure.SCISSORS: result = "images/П_Ножницы.png"; break;
+                default/*Figure.PAPER*/: result = "images/П_Бумага.png"; break;
+            }
+        }
     }
     return result;
 }
@@ -131,19 +182,25 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             fillRect([halfWidth,0], halfWidth, curHeight, Color.GREEN);
         }break;
         case ObjectType.BUTTON_BACK:{
-            const widthDiv10 = curWidth/10;
+            const widthDiv13 = curWidth/13;
             const heightDiv15 = curHeight/15;
             const heightDiv45 = heightDiv15/3;
-            const widthDiv20 = widthDiv10/2;
-            fillRect([0,0], widthDiv10, heightDiv15, Color.GREEN);
-            fillTriangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[widthDiv10/3,heightDiv15/2]],[widthDiv20/8, 0]), Color.BLACK);
+            const widthDiv20 = widthDiv13/2;
+            fillRect([0,0], widthDiv13, heightDiv15, Color.GREEN);
+            fillTriangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[widthDiv13/3,heightDiv15/2]],[widthDiv20/8, 0]), Color.BLACK);
         }break;
         case ObjectType.ENEMY_ADDRESS:{
             const halfWidth = curWidth/2;
             const mainAddressPosX = halfWidth+indentFromCenterX;
             const mainAddressPosY = curHeight/5;
-            fillRect([mainAddressPosX,mainAddressPosY], mainAddressWidth, mainAddressHeight, Color.ORANGE);
+            // fillRect([mainAddressPosX,mainAddressPosY], mainAddressWidth, mainAddressHeight, Color.ORANGE);
             fillText("Адрес соперника", [mainAddressPosX+mainAddressWidth/8*3, mainAddressPosY-indent], {fontStyle:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK})
+            if(input.enemyAddress){
+                input.enemyAddress.destroy();
+                input.enemyAddress = null;
+            }
+            input.enemyAddress = createInput([mainAddressPosX,mainAddressPosY], mainAddressWidth-indent, mainAddressHeight-indent,
+                                             {font:{px:18, style:Font.ARIAL}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3}});
         }break;
         case ObjectType.ADDRESSES_LIST:{
             const enemyBetIndentWidth = mainAddressWidth-enemyBetWidth;
@@ -190,8 +247,15 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const betInputHalfHeight = height/2;
             const betInputPosY = halfHeight-betInputHalfHeight;
             //Рисуем текст и прямоугольник
-            fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);
-            fillText("Ставка",[betInputPosX+widthDiv40/16*5,betInputPosY-indent],{fontStyle:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK});
+            // fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);
+            fillText("Ставка",[betInputPosX+widthDiv40/16*5,betInputPosY-indent],{font:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK});
+            if(input.bet){
+                input.bet.destroy();
+                input.bet = null;
+            }
+            input.bet = createInput([betInputPosX,betInputPosY], widthDiv20-indent, height-indent,
+                {font:{px:18, style:Font.ARIAL}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3}});
+
             //Рисуем кнопки
             const widthDiv160 = widthDiv20/8;
             const betLeftButtonPosX = betInputPosX-widthDiv160;
@@ -215,36 +279,46 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             fillCircle([startDotPosX+indentBetweenDots,halfHeight], radius);
         }break;
         case ObjectType.PLAYER_FIGURE:{
-            //Рисуем фигуру, если её выбрали
-            if(argsObj.figures && argsObj.figures.player) {
-
-                function getSrc(figureType){
-                    let result;
-                    switch (figureType) {
-                        case Figure.ROCK: result = "images/Л_Камень.png"; break;
-                        case Figure.SCISSORS: result = "images/Л_Ножницы.png"; break;
-                        default: result = "images/Л_Бумага.png"; break;
-                    }
-                    return result;
-                }
-
-                createImg(getSrc(argsObj.figures.player),[halfWidth/5,curHeight/7*3], 636,338);
+            const imgW = 636;
+            const imgH = 338;
+            const imgPosX = 0;
+            const imgPosY = curHeight/3;
+            //Рисуем фигуру игрока, если её выбрали
+            if(argsObj.figures) {
+                createImg(getSrc(argsObj.figures),[imgPosX,imgPosY], imgW, imgH);
             }
         }break;
         case ObjectType.ENEMY_FIGURE:{
-
+            //Рисуем фигуру противника, если её выбрали
+            if(argsObj.figures) {
+                const imgW = 636;
+                const imgH = 338;
+                const imgPosX = curWidth-imgW;
+                const imgPosY = curHeight/3;
+                createImg(getSrc(argsObj.figures),[imgPosX,imgPosY], imgW, imgH);
+            }
         }break;
         case ObjectType.THREE_FIGURES:{
-
+            const imgW = 338/3;
+            const imgH = 636/3;
+            const indent = curWidth/40;
+            const imgPosX1 = halfWidth/2-imgW/2;
+            const imgPosX2 = imgPosX1-indent-imgW;
+            const imgPosX3 = imgPosX1+indent+imgW;
+            const imgPosY = curHeight-imgH;
+            //Рисуем три фигуры для выбора
+            createImg("images/Н_Камень.png",[imgPosX2,imgPosY], imgW, imgH);
+            createImg("images/Н_Ножницы.png",[imgPosX1,imgPosY], imgW, imgH);
+            createImg("images/Н_Бумага.png",[imgPosX3,imgPosY], imgW, imgH);
         }break;
     }
 }
 
-function getFigure() {
-    return {figures:{
-        player:curPlayerFigure,
-        enemy:curEnemyFigure
-    }}
+function getFigure(state) {
+    const isPlayer = state>0;
+    let result = {figures:{}};
+    isPlayer ?result.figures.player=curPlayerFigure :result.figures.enemy=curEnemyFigure;
+    return result;
 }
 
 function getEnemyAddresses() {
@@ -272,7 +346,7 @@ function draw() {
                 //Кнопка назад
                 drawObject(ObjectType.BUTTON_BACK);
                 //Фигура игрока
-                drawObject(ObjectType.PLAYER_FIGURE, getFigure());
+                drawObject(ObjectType.PLAYER_FIGURE, getFigure(curPlayerState));
             }break;
         }
 
@@ -290,7 +364,7 @@ function draw() {
             }break;
             case EnemyState.CHOICE_IS_MADE:{
                 //Фигура противника
-                drawObject(ObjectType.ENEMY_FIGURE);
+                drawObject(ObjectType.ENEMY_FIGURE, getFigure(curEnemyState));
             }break;
         }
     }
