@@ -243,8 +243,8 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
 
 function getFigure() {
     return {figures:{
-        player:Figure.ROCK,
-        enemy:Figure.SCISSORS
+        player:curPlayerState,
+        enemy:curEnemyState
     }}
 }
 
