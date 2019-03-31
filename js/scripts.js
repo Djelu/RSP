@@ -150,29 +150,28 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const mainAddressBlock = curHeight/5+mainAddressHeight+2*indent;//высота панели ввода адреса
             const height = mainAddressHeight-mainAddressHeight/4;//высота панели выбора адреса
             const itemAddressBlock = height+indent;//высота панели выбора адреса с отступом
-            const listSize = 10;//Количество строк адресов
-            let pars = [];
-            //Рисуем желтые прямоугольники
-            context.fillStyle = Color.YELLOW;
-            for(let i=0; i<listSize; i++) {
-                const pos = [halfWidth+indentFromCenterX,mainAddressBlock+(itemAddressBlock)*i];
-                fillRect(pos, mainAddressWidth, height);
-                pars.push(pos);
-            }
-            //Рисуем розовые прямоугольники
-            context.fillStyle = Color.PINK;
-            for(let i=0; i<listSize; i++) {
-                fillRect([pars[i][0]+enemyBetIndentWidth,pars[i][1]], enemyBetWidth, height);
-            }
-            //Рисуем текст адресов, если они есть
             if(argsObj.addresses){
                 const addresses = argsObj.addresses;
+                let pars = [];
+                //Рисуем желтые прямоугольники
+                context.fillStyle = Color.YELLOW;
+                for(let i=0; i<addresses.length; i++) {
+                    const pos = [halfWidth+indentFromCenterX,mainAddressBlock+(itemAddressBlock)*i];
+                    fillRect(pos, mainAddressWidth, height);
+                    pars.push(pos);
+                }
+                //Рисуем розовые прямоугольники
+                context.fillStyle = Color.PINK;
+                for(let i=0; i<addresses.length; i++) {
+                    fillRect([pars[i][0]+enemyBetIndentWidth,pars[i][1]], enemyBetWidth, height);
+                }
+                //Рисуем текст адресов
                 const addressTextIndentY = height/3*2;
                 const addressTextIndentX = mainAddressWidth/30;
                 const betTextIndentX = enemyBetWidth/10;
                 context.font = "15px "+Font.TIME_NEW_ROMAN;
                 context.fillStyle = Color.BLACK;
-                for (let i=0; i<listSize; i++) {
+                for (let i=0; i<addresses.length; i++) {
                     if(addresses[i] && addresses[i].address){
                         context.fillText((i+1)+". "+addresses[i].address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
                         context.fillText(addresses[i].bet+" ETH",pars[i][0]+enemyBetIndentWidth+betTextIndentX,pars[i][1]+addressTextIndentY);
