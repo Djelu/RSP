@@ -200,7 +200,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 input.enemyAddress = null;
             }
             input.enemyAddress = createInput([mainAddressPosX,mainAddressPosY], mainAddressWidth-indent, mainAddressHeight-indent,
-                                             {font:{px:18, style:Font.ARIAL}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3}});
+                                             {font:{px:18, style:Font.TIME_NEW_ROMAN}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3}});
         }break;
         case ObjectType.ADDRESSES_LIST:{
             const enemyBetIndentWidth = mainAddressWidth-enemyBetWidth;
@@ -254,7 +254,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 input.bet = null;
             }
             input.bet = createInput([betInputPosX,betInputPosY], widthDiv20-indent, height-indent,
-                {font:{px:18, style:Font.ARIAL}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3}});
+                {font:{px:18, style:Font.TIME_NEW_ROMAN}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3}});
 
             //Рисуем кнопки
             const widthDiv160 = widthDiv20/8;
