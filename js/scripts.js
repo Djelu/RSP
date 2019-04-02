@@ -131,6 +131,7 @@ function createInput(pos, w, h, options) {
             if(options.defText) {
                 input.value = options.defText;
             }
+            return input;
         }
 }
 function plusVector(pars, vector) {
@@ -412,10 +413,8 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             createImg("images/Н_Камень.png",[imgPosX2,imgPosY], imgW, imgH);
             createImg("images/Н_Ножницы.png",[imgPosX1,imgPosY], imgW, imgH);
             createImg("images/Н_Бумага.png",[imgPosX3,imgPosY], imgW, imgH);
-            const onclick = function(){
 
-            };
-            elements.push({type:objType, pars:{x:imgPosX2,y:imgPosY,w:3*imgW+3*indent,h:3*imgH+3*indent}, func:onclick});
+            elements.push({type:objType, pars:{x:imgPosX2,y:imgPosY,w:3*imgW+3*indent,h:3*imgH+3*indent}, subElements:[]});
             const curElemIndex = elements.length-1;
 
             const onRockClick = function(){
