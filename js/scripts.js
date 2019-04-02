@@ -11,7 +11,7 @@ const Color = {ORANGE:"rgb(185,122,87)", GREEN:"rgb(104,169,139)", BLACK:"rgb(0,
 const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
 const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
 const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
-const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial"};
+const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial",COURIER:"Courier New"};
 let whMin = canvas.width;
 
 let curPlayerFigure = Figure.ROCK;
@@ -253,9 +253,11 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             elements.push({type:objType, pars:{x:0,y:0,w:width,h:height}, func:onclick});
         }break;
         case ObjectType.ENEMY_ADDRESS:{
-            const posX = halfWidth+indentFromCenterX;
+            const posX = halfWidth+halfWidth/2;
             const posY = curHeight/5;
-            fillText("Адрес соперника", [posX+mainAddressWidth/8*3, posY-indent], {fontStyle:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK});
+			context.font = "22px "+Font.COURIER;			
+			context.textAlign='center';
+            fillText("АДРЕС СОПЕРНИКА", [posX, posY-indent]);
             createEnemyAddressInput(posX,posY);
             elements.push({type:objType, pars:{x:posX,y:posY}});
         }break;
@@ -296,7 +298,8 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 const enemyAddressInput = getElement(ObjectType.ENEMY_ADDRESS);
                 const betInput = getElement(ObjectType.BET);
 
-                context.font = "15px "+Font.TIME_NEW_ROMAN;
+                context.font = "15px "+Font.COURIER;				
+				context.textAlign='left';
                 context.fillStyle = Color.BLACK;
                 for (let i=0; i<addresses.length; i++) {
                     if(addresses[i] && addresses[i].address){
@@ -317,21 +320,25 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             }
         }break;
         case ObjectType.BET:{
+            const posX = halfWidth-halfWidth/2;
             const widthDiv4 = curWidth/4;
             const widthDiv20 = curWidth/20;
             const height = mainAddressHeight-mainAddressHeight/4;
             const widthDiv40 = widthDiv20/2;
-            const betInputPosX = widthDiv4-widthDiv40;
+            const betInputPosX = posX+(widthDiv20-indent)/2;
             const betInputHalfHeight = height/2;
             const betInputPosY = halfHeight-betInputHalfHeight;
             //Рисуем текст и прямоугольник
-            // fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);
-            fillText("Ставка",[betInputPosX+widthDiv40/16*5,betInputPosY-indent],{font:{px:20,style:Font.TIME_NEW_ROMAN},color:Color.BLACK});
+            // fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);			
+			context.font = "22px "+Font.COURIER;			
+			context.textAlign='center';		
+            context.fillStyle = Color.BLACK;
+            fillText("СТАВКА",[posX,betInputPosY-indent]);
             createBetInput(betInputPosX,betInputPosY,widthDiv20-indent,height-indent);
             //Рисуем кнопки
             const widthDiv160 = widthDiv20/8;
-            const betLeftButtonPosX = betInputPosX-widthDiv160;
-            const betRightButtonPosX = betInputPosX+widthDiv20+widthDiv160;
+            const betLeftButtonPosX = posX-50;
+            const betRightButtonPosX = posX+50;
             const betInputHeightDiv4 = betInputHalfHeight/3;
             const betButtonPosY1 = betInputPosY+betInputHeightDiv4;
             const betButtonPosY2 = betInputPosY+height-betInputHeightDiv4;
@@ -439,7 +446,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
         }
         input.enemyAddress = {
             elem: createInput([posX,posY], mainAddressWidth-indent, mainAddressHeight-indent,
-                {font:{px:18, style:Font.TIME_NEW_ROMAN}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3, defText:defText}}),
+                {font:{px:18, style:Font.COURIER}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3, defText:defText}}),
             pos:[posX,posY],
         };
     }
@@ -450,7 +457,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             input.bet = null;
         }
         input.bet = createInput([posX,posY], w, h,
-            {font:{px:18, style:Font.TIME_NEW_ROMAN}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3, defText:defText}});
+            {font:{px:18, style:Font.COURIER}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3, defText:defText}});
 
     }
 }
