@@ -299,8 +299,10 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             }
         }break;
         case ObjectType.THREE_FIGURES:{
-            const imgW = 338/3;
-            const imgH = 636/3;
+			var whmin = canvas.width;
+			if (whmin > canvas.height) whmin = canvas.height;			
+            const imgW = 338/3000*whmin;
+            const imgH = 636/3000*whmin;
             const indent = curWidth/40;
             const imgPosX1 = halfWidth/2-imgW/2;
             const imgPosX2 = imgPosX1-indent-imgW;
