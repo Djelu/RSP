@@ -10,6 +10,7 @@ const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
 const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
 const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
 const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial"};
+var whmin = canvas.width;
 
 let curPlayerFigure = Figure.ROCK;
 let curEnemyFigure = Figure.ROCK;
@@ -22,7 +23,9 @@ resizeCanvas();
 
 function resizeCanvas() {
     canvas.width = curWidth = window.innerWidth;
-    canvas.height = curHeight = window.innerHeight;
+    canvas.height = curHeight = window.innerHeight;    
+	whmin = canvas.width;
+    if (whmin > canvas.height) whmin = canvas.height;
     draw();
 }
 
@@ -298,9 +301,9 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 createImg(getSrc(argsObj.figures),[imgPosX,imgPosY], imgW, imgH);
             }
         }break;
-        case ObjectType.THREE_FIGURES:{
-            const imgW = 338/3;
-            const imgH = 636/3;
+        case ObjectType.THREE_FIGURES:{ 
+            const imgW = 338/3000*whmin;
+            const imgH = 636/3000*whmin;                        
             const indent = curWidth/40;
             const imgPosX1 = halfWidth/2-imgW/2;
             const imgPosX2 = imgPosX1-indent-imgW;
