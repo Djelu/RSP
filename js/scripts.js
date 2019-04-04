@@ -11,7 +11,7 @@ const Color = {ORANGE:"rgb(185,122,87)", GREEN:"rgb(104,169,139)", BLACK:"rgb(0,
 const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
 const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
 const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
-const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial",COURIER:"Courier New"};
+const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial",CALIBRI:"Calibri"};
 let whMin = canvas.width;
 
 let curPlayerFigure = Figure.ROCK;
@@ -29,8 +29,7 @@ resizeCanvas();
 function resizeCanvas() {
     canvas.width = curWidth = window.innerWidth;
     canvas.height = curHeight = window.innerHeight;
-
-	whMin = canvas.width;
+    whMin = canvas.width;
     if(whMin > canvas.height) whMin = canvas.height;
 
     draw();
@@ -225,15 +224,24 @@ function canvasOnClick(event) {
     checkAndWork(elements);
 }
 
+function fixText(my_text,my_width) {    
+    var testWidth = context.measureText(my_text).width;
+    if (testWidth > my_width) {
+        
+        return my_text.substring(0,my_text.length-(testWidth - my_width)/9.001)+"...";
+    } else    
+    return my_text;
+}
+
 function drawObject(objType, argsObj) {//Рисуем объект согласно переданному типу
     
     const halfWidth = curWidth/2;
     const halfHeight = curHeight/2;
     const mainAddressWidth = curWidth/3;//Ширина панели адреса
-    const enemyBetWidth = mainAddressWidth/12;//Ширина вражеской ставки
+    const enemyBetWidth = 70;//Ширина вражеской ставки
     const mainAddressHeight = curHeight/22;//Высота панели адреса
     const indentFromCenterX = (halfWidth-mainAddressWidth)/2;//Отступ от центра для списка адресов
-    const indent = mainAddressHeight/3;//отступ между адресами
+    const indent = 5;//отступ между адресами
 
     switch (objType) {
         case ObjectType.MAIN_PARTS:{
@@ -255,16 +263,16 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
         case ObjectType.ENEMY_ADDRESS:{
             const posX = halfWidth+halfWidth/2;
             const posY = curHeight/5;
-			context.font = "22px "+Font.COURIER;			
-			context.textAlign='center';
-            fillText("АДРЕС СОПЕРНИКА", [posX, posY-indent]);
+            context.font = "22px "+Font.CALIBRI;            
+            context.textAlign='center';
+            fillText("Enemy address", [posX, posY-indent]);
             createEnemyAddressInput(posX,posY);
             elements.push({type:objType, pars:{x:posX,y:posY}});
         }break;
         case ObjectType.ADDRESSES_LIST:{
             const enemyBetIndentWidth = mainAddressWidth-enemyBetWidth;
             const mainAddressBlock = curHeight/5+mainAddressHeight+2*indent;//высота панели ввода адреса
-            const height = mainAddressHeight-mainAddressHeight/4;//высота панели выбора адреса
+            var height = 26;
             const itemAddressBlock = height+indent;//высота панели выбора адреса с отступом
             if(argsObj.addresses){
                 const addresses = argsObj.addresses;
@@ -297,16 +305,19 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
 
                 const enemyAddressInput = getElement(ObjectType.ENEMY_ADDRESS);
                 const betInput = getElement(ObjectType.BET);
-
-                context.font = "15px "+Font.COURIER;				
-				context.textAlign='left';
+            
+                context.textAlign='left';
                 context.fillStyle = Color.BLACK;
                 for (let i=0; i<addresses.length; i++) {
-                    if(addresses[i] && addresses[i].address){
-                        const bet = addresses[i].bet+" ETH";
-                        const address = addresses[i].address;
+                    if(addresses[i] && addresses[i].address){                        
+                        context.font = "15px COURIER NEW";    
+                        const bet = addresses[i].bet+" eth";
+                        const address = fixText(addresses[i].address,mainAddressWidth-enemyBetWidth*2);
+                        context.textAlign='left';                        
                         context.fillText((i+1)+". "+address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
-                        context.fillText(bet,pars[i][0]+enemyBetIndentWidth+betTextIndentX,pars[i][1]+addressTextIndentY);
+                        context.font = "15px "+Font.CALIBRI;    
+                        context.textAlign='right';
+                        context.fillText(bet,pars[i][0]+enemyBetIndentWidth+enemyBetWidth-betTextIndentX,pars[i][1]+addressTextIndentY);
                         const posY = mainAddressBlock+(itemAddressBlock)*i;
                         const onclick = function(){
                             createEnemyAddressInput(enemyAddressInput.pars.x, enemyAddressInput.pars.y, address);
@@ -329,22 +340,22 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const betInputHalfHeight = height/2;
             const betInputPosY = halfHeight-betInputHalfHeight;
             //Рисуем текст и прямоугольник
-            // fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);			
-			context.font = "22px "+Font.COURIER;			
-			context.textAlign='center';		
+            // fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);            
+            context.font = "22px "+Font.CALIBRI;            
+            context.textAlign='center';        
             context.fillStyle = Color.BLACK;
-            fillText("СТАВКА",[posX,betInputPosY-indent]);
+            fillText("Bet",[posX,betInputPosY-indent]);
             createBetInput(betInputPosX,betInputPosY,widthDiv20-indent,height-indent);
             //Рисуем кнопки
             const widthDiv160 = widthDiv20/8;
-            const betLeftButtonPosX = posX-50;
-            const betRightButtonPosX = posX+50;
-            const betInputHeightDiv4 = betInputHalfHeight/3;
+            const betLeftButtonPosX = posX-40;
+            const betRightButtonPosX = posX+40;
+            const betInputHeightDiv4 = 24;
             const betButtonPosY1 = betInputPosY+betInputHeightDiv4;
-            const betButtonPosY2 = betInputPosY+height-betInputHeightDiv4;
-            const betLeftButtonPosX3 = betLeftButtonPosX-betInputHalfHeight;
-            const betButtonPosY3 = betInputPosY+betInputHalfHeight;
-            const betRightButtonPosX3 = betRightButtonPosX+betInputHalfHeight;
+            const betButtonPosY2 = betInputPosY;
+            const betLeftButtonPosX3 = betLeftButtonPosX-betInputHeightDiv4/2;
+            const betButtonPosY3 = betInputPosY+betInputHeightDiv4/2;
+            const betRightButtonPosX3 = betRightButtonPosX+betInputHeightDiv4/2;
             fillTriangle([[betLeftButtonPosX,betButtonPosY1],[betLeftButtonPosX,betButtonPosY2],[betLeftButtonPosX3,betButtonPosY3]]);
             fillTriangle([[betRightButtonPosX,betButtonPosY1],[betRightButtonPosX,betButtonPosY2],[betRightButtonPosX3,betButtonPosY3]]);
 
@@ -388,6 +399,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             //Рисуем фигуру игрока, если её выбрали
             if(argsObj.figures) {
                 createImg(getSrc(argsObj.figures),[imgPosX,imgPosY], imgW, imgH);
+                
                 const onclick = function(){
 
                 };
@@ -441,23 +453,23 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
 
     function createEnemyAddressInput(posX, posY, defText) {
         if(input.enemyAddress){
-            input.enemyAddress.destroy();
+            //input.enemyAddress.destroy();
             input.enemyAddress = null;
         }
         input.enemyAddress = {
             elem: createInput([posX,posY], mainAddressWidth-indent, mainAddressHeight-indent,
-                {font:{px:18, style:Font.COURIER}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3, defText:defText}}),
+                {font:{px:18, style:Font.CALIBRI}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3, defText:defText}}),
             pos:[posX,posY],
         };
     }
 
     function createBetInput(posX, posY, w, h, defText) {
         if(input.bet){
-            input.bet.destroy();
+            //input.bet.destroy();
             input.bet = null;
         }
         input.bet = createInput([posX,posY], w, h,
-            {font:{px:18, style:Font.COURIER}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3, defText:defText}});
+            {font:{px:18, style:Font.CALIBRI}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3, defText:defText}});
 
     }
 }
@@ -471,9 +483,9 @@ function getFigure(state) {
 
 function getEnemyAddresses() {
     return {addresses:[
-        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0},
+        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0.001},
         {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:5},
-        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:3}
+        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0.03}
     ]}
 }
 
