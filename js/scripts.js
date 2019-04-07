@@ -25,6 +25,7 @@ canvas.addEventListener('click', canvasOnClick, false);
 window.addEventListener('resize', resizeCanvas, false);
 
 resizeCanvas();
+init();
 
 function resizeCanvas() {
     canvas.width = curWidth = window.innerWidth;
@@ -33,6 +34,11 @@ function resizeCanvas() {
     if(whMin > canvas.height) whMin = canvas.height;
 
     draw();
+}
+
+function init() {
+    input.bet = createInput(curWidth/4-curWidth/70, curHeight/2-curHeight/100, curWidth/35, curHeight/35, "", ObjectType.BET);
+    input.enemyAddress = createInput(3*curWidth/4-curWidth/6, curHeight/5-curHeight/200, curWidth/4+curWidth/16+curWidth/47, 3*curHeight/100, "", ObjectType.ENEMY_ADDRESS);
 }
 
 function colorToHex(color) {
@@ -104,35 +110,38 @@ function createImg(src, pos, w, h) {
         }
     }
 }
-function createInput(pos, w, h, options) {
-    const font = options.font;
-    const border = options.border;
-    return !(pos.length==2&&font&&font.px&&font.style&&options.color)
-        ?null
-        : () => {
-            let input = new CanvasInput({
-                x: pos[0],
-                y: pos[1],
-                width: w,
-                height: h,
-                backgroundColor: options.color,
-                canvas: canvas,
-                fontSize: font.px,
-                fontFamily: font.style,
-                // fontColor: options.color,
-                borderWidth: border&&border.width ?border.width :undefined,
-                borderColor: border&&border.color ?border.color :undefined,
-                borderRadius: border&&border.radius ?border.radius :undefined,
-                // boxShadow: '1px 1px 0px #fff',
-                // innerShadow: '0px 0px 5px rgba(0, 0, 0, 0.5)',
-                // placeHolder: defText
-            });
-            if(options.defText) {
-                input.value = options.defText;
-            }
-            return input;
-        }
-}
+// function createInput(pos, w, h, options) {
+//     const font = options.font;
+//     const border = options.border;
+//     if (!(pos.length == 2 && font && font.px && font.style && options.color)) {
+//         return null
+//     } else {
+//         function createCanvasInput() {
+//             let input = new CanvasInput({
+//                 x: pos[0],
+//                 y: pos[1],
+//                 width: w,
+//                 height: h,
+//                 backgroundColor: options.color,
+//                 canvas: canvas,
+//                 fontSize: font.px,
+//                 fontFamily: font.style,
+//                 // fontColor: options.color,
+//                 borderWidth: border && border.width ? border.width : undefined,
+//                 borderColor: border && border.color ? border.color : undefined,
+//                 borderRadius: border && border.radius ? border.radius : undefined,
+//                 // boxShadow: '1px 1px 0px #fff',
+//                 // innerShadow: '0px 0px 5px rgba(0, 0, 0, 0.5)',
+//                 // placeHolder: defText
+//             });
+//             if (options.defText) {
+//                 input.value = options.defText;
+//             }
+//             return input;
+//         }
+//         return createCanvasInput();
+//     }
+// }
 function plusVector(pars, vector) {
     let result = pars;
     if(Array.isArray(pars[0])){
@@ -169,7 +178,7 @@ function getSrc(figure){
 }
 
 function setState(obj) {
-    for(key in obj){
+    for(let key in obj){
         switch(key) {
             case "player":{
                 if(obj[key].state){
@@ -189,6 +198,7 @@ function setState(obj) {
             }break;
         }
     }
+    draw();
 }
 
 function getElement(type) {
@@ -208,8 +218,8 @@ function canvasOnClick(event) {
 
     function checkAndWork(elements){
         elements.forEach(function(element) {
-            if (y>element.top && y<element.top + element.height
-                && x>element.left && x<element.left + element.width) {
+            if (y>element.pars.y && y<element.pars.y + element.pars.h
+                && x>element.pars.x && x<element.pars.x + element.pars.w) {
                 if(element.subElements && element.subElements.length>0){
                     checkAndWork(element.subElements);
                 }else{
@@ -233,13 +243,32 @@ function fixText(my_text,my_width) {
     return my_text;
 }
 
+function hideNonCanvasElements() {
+    for(let key in input){
+        if(input[key] && input[key].style){
+            input[key].style.display = "none";
+        }
+    }
+}
+
+function showNonCanvasElement(objType) {
+    let objToCheck = null;
+    switch(objType) {
+        case ObjectType.BET: objToCheck = input.bet; break;
+        default /*ObjectType.ENEMY_ADDRESS*/: objToCheck = input.enemyAddress; break;
+    }
+    if(objToCheck && objToCheck.style){
+        objToCheck.style.display = "block";
+    }
+}
+
 function drawObject(objType, argsObj) {//Рисуем объект согласно переданному типу
     
     const halfWidth = curWidth/2;
     const halfHeight = curHeight/2;
     const mainAddressWidth = curWidth/3;//Ширина панели адреса
     const enemyBetWidth = 70;//Ширина вражеской ставки
-    const mainAddressHeight = curHeight/22;//Высота панели адреса
+    const mainAddressHeight = curHeight/40;//Высота панели адреса
     const indentFromCenterX = (halfWidth-mainAddressWidth)/2;//Отступ от центра для списка адресов
     const indent = 5;//отступ между адресами
 
@@ -265,14 +294,14 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const posY = curHeight/5;
             context.font = "22px "+Font.CALIBRI;            
             context.textAlign='center';
-            fillText("Enemy address", [posX, posY-indent]);
-            createEnemyAddressInput(posX,posY);
-            elements.push({type:objType, pars:{x:posX,y:posY}});
+            fillText("Enemy address", [posX, posY-indent*3]);
+            showNonCanvasElement(ObjectType.ENEMY_ADDRESS);
+            elements.push({type:objType, pars:{x:posX-mainAddressWidth/2-indent,y:posY-indent}});
         }break;
         case ObjectType.ADDRESSES_LIST:{
             const enemyBetIndentWidth = mainAddressWidth-enemyBetWidth;
             const mainAddressBlock = curHeight/5+mainAddressHeight+2*indent;//высота панели ввода адреса
-            var height = 26;
+            const height = 26;
             const itemAddressBlock = height+indent;//высота панели выбора адреса с отступом
             if(argsObj.addresses){
                 const addresses = argsObj.addresses;
@@ -285,45 +314,37 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                     fillRect(pos, mainAddressWidth, height);
                     pars.push(pos);
                 }
+                elements.push({type:objType, pars:{x:posX,y:mainAddressBlock,w:mainAddressWidth,h:(height+indent)*addresses.length}, func:onclick, subElements:[]});
+                const curElemIndex = elements.length-1;
                 //Рисуем розовые прямоугольники
                 context.fillStyle = Color.PINK;
                 for(let i=0; i<addresses.length; i++) {
                     fillRect([pars[i][0]+enemyBetIndentWidth,pars[i][1]], enemyBetWidth, height);
                 }
 
-                // const onclick = function(){
-                //     const enemyAddressInput = getElement(ObjectType.ENEMY_ADDRESS);
-                //     createEnemyAddressInput(enemyAddressInput.pars.x, enemyAddressInput.pars.y, );
-                // };
-                elements.push({type:objType, pars:{x:posX,y:mainAddressBlock,w:mainAddressWidth,h:height}, func:onclick, subElements:[]});
-                const curElemIndex = elements.length-1;
-
                 //Рисуем текст адресов
                 const addressTextIndentY = height/3*2;
                 const addressTextIndentX = mainAddressWidth/30;
                 const betTextIndentX = enemyBetWidth/10;
 
-                const enemyAddressInput = getElement(ObjectType.ENEMY_ADDRESS);
-                const betInput = getElement(ObjectType.BET);
-            
                 context.textAlign='left';
                 context.fillStyle = Color.BLACK;
                 for (let i=0; i<addresses.length; i++) {
                     if(addresses[i] && addresses[i].address){                        
                         context.font = "15px COURIER NEW";    
-                        const bet = addresses[i].bet+" eth";
-                        const address = fixText(addresses[i].address,mainAddressWidth-enemyBetWidth*2);
-                        context.textAlign='left';                        
+                        const bet = addresses[i].bet;
+                        const address = addresses[i].address;
+                        context.textAlign='left';
                         context.fillText((i+1)+". "+address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
                         context.font = "15px "+Font.CALIBRI;    
                         context.textAlign='right';
-                        context.fillText(bet,pars[i][0]+enemyBetIndentWidth+enemyBetWidth-betTextIndentX,pars[i][1]+addressTextIndentY);
+                        context.fillText(bet+" eth",pars[i][0]+enemyBetIndentWidth+enemyBetWidth-betTextIndentX,pars[i][1]+addressTextIndentY);
                         const posY = mainAddressBlock+(itemAddressBlock)*i;
                         const onclick = function(){
-                            createEnemyAddressInput(enemyAddressInput.pars.x, enemyAddressInput.pars.y, address);
-                            createBetInput(betInput.pars.x, betInput.pars.y, betInput.pars.w, betInput.pars.h, bet);
+                            input.enemyAddress.value = address;
+                            input.bet.value = bet;
                         };
-                        elements[curElemIndex].subElements.push({pars:{x:posX,y:posY,w:mainAddressWidth,h:height}, func:onclick});
+                        elements[curElemIndex].subElements.push({pars:{x:posX,y:posY,w:mainAddressWidth+enemyBetWidth,h:height}, func:onclick});
                     }else{
                         break;
                     }
@@ -331,23 +352,17 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             }
         }break;
         case ObjectType.BET:{
-            const posX = halfWidth-halfWidth/2;
-            const widthDiv4 = curWidth/4;
-            const widthDiv20 = curWidth/20;
+            const posX = halfWidth/2;
             const height = mainAddressHeight-mainAddressHeight/4;
-            const widthDiv40 = widthDiv20/2;
-            const betInputPosX = posX+(widthDiv20-indent)/2;
             const betInputHalfHeight = height/2;
             const betInputPosY = halfHeight-betInputHalfHeight;
             //Рисуем текст и прямоугольник
-            // fillRect([betInputPosX,betInputPosY], widthDiv20, height, Color.GREEN);            
-            context.font = "22px "+Font.CALIBRI;            
+            context.font = "22px "+Font.CALIBRI;
             context.textAlign='center';        
             context.fillStyle = Color.BLACK;
-            fillText("Bet",[posX,betInputPosY-indent]);
-            createBetInput(betInputPosX,betInputPosY,widthDiv20-indent,height-indent);
+            fillText("Bet",[posX,betInputPosY-indent*2]);
+            showNonCanvasElement(ObjectType.BET);
             //Рисуем кнопки
-            const widthDiv160 = widthDiv20/8;
             const betLeftButtonPosX = posX-40;
             const betRightButtonPosX = posX+40;
             const betInputHeightDiv4 = 24;
@@ -359,11 +374,11 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             fillTriangle([[betLeftButtonPosX,betButtonPosY1],[betLeftButtonPosX,betButtonPosY2],[betLeftButtonPosX3,betButtonPosY3]]);
             fillTriangle([[betRightButtonPosX,betButtonPosY1],[betRightButtonPosX,betButtonPosY2],[betRightButtonPosX3,betButtonPosY3]]);
 
-            elements.push({type:objType, pars:{x:betInputPosX,y:betInputPosY,w:widthDiv20-indent,h:height-indent}, subElements:[]});
+            elements.push({type:objType, pars:{x:betLeftButtonPosX3,y:betButtonPosY2,w:betRightButtonPosX3-betLeftButtonPosX3,h:betButtonPosY1-betButtonPosY2}, subElements:[]});
             const curElemIndex = elements.length-1;
 
             const onLeftClick = function(){
-                if(Number.isInteger(input.bet.value)) {
+                if(!isNaN(input.bet.value)) {
                     const betValue = Number(input.bet.value);
                     if(betValue!=0) {
                         input.bet.value = betValue - 1;
@@ -371,15 +386,15 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 }
             };
             const onRightClick = function(){
-                if(Number.isInteger(input.bet.value)) {
+                if(!isNaN(input.bet.value)) {
                     const betValue = Number(input.bet.value);
                     if(betValue!=0) {
                         input.bet.value = betValue + 1;
                     }
                 }
             };
-            elements[curElemIndex].subElements.push({pars:{x:betLeftButtonPosX3,y:betButtonPosY1,w:betLeftButtonPosX-betLeftButtonPosX3,h:height-indent}, func:onLeftClick});
-            elements[curElemIndex].subElements.push({pars:{x:betRightButtonPosX,y:betButtonPosY1,w:betRightButtonPosX3-betRightButtonPosX,h:height-indent}, func:onRightClick});
+            elements[curElemIndex].subElements.push({pars:{x:betLeftButtonPosX3,y:betButtonPosY2,w:betLeftButtonPosX-betLeftButtonPosX3,h:betButtonPosY1-betButtonPosY2}, func:onLeftClick});
+            elements[curElemIndex].subElements.push({pars:{x:betRightButtonPosX,y:betButtonPosY2,w:betRightButtonPosX3-betRightButtonPosX,h:betButtonPosY1-betButtonPosY2}, func:onRightClick});
 
         }break;
         case ObjectType.DOTS:{
@@ -399,11 +414,10 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             //Рисуем фигуру игрока, если её выбрали
             if(argsObj.figures) {
                 createImg(getSrc(argsObj.figures),[imgPosX,imgPosY], imgW, imgH);
-                
-                const onclick = function(){
-
-                };
-                elements.push({type:objType, pars:{x:imgPosX,y:imgPosY,w:imgW,h:imgH}, func:onclick});
+                // const onclick = function(){
+                //
+                // };
+                // elements.push({type:objType, pars:{x:imgPosX,y:imgPosY,w:imgW,h:imgH}, func:onclick});
             }
         }break;
         case ObjectType.ENEMY_FIGURE:{
@@ -414,10 +428,10 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 const imgPosX = curWidth-imgW;
                 const imgPosY = curHeight/3;
                 createImg(getSrc(argsObj.figures),[imgPosX,imgPosY], imgW, imgH);
-                const onclick = function(){
-
-                };
-                elements.push({type:objType, pars:{x:imgPosX,y:imgPosY,w:imgW,h:imgH}, func:onclick});
+                // const onclick = function(){
+                //
+                // };
+                // elements.push({type:objType, pars:{x:imgPosX,y:imgPosY,w:imgW,h:imgH}, func:onclick});
             }
         }break;
         case ObjectType.THREE_FIGURES:{ 
@@ -437,41 +451,46 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const curElemIndex = elements.length-1;
 
             const onRockClick = function(){
-
+                setState({player:{figure:Figure.ROCK, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX2,y:imgPosY,w:imgW,h:imgH}, func:onRockClick});
             const onScissorsClick = function(){
-
+                setState({player:{figure:Figure.SCISSORS, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
             };
-            elements[curElemIndex].subElements.push({pars:{x:imgPosX2,y:imgPosY,w:imgW,h:imgH}, func:onScissorsClick});
+            elements[curElemIndex].subElements.push({pars:{x:imgPosX1,y:imgPosY,w:imgW,h:imgH}, func:onScissorsClick});
             const onPaperClick = function(){
-
+                setState({player:{figure:Figure.PAPER, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
             };
-            elements[curElemIndex].subElements.push({pars:{x:imgPosX2,y:imgPosY,w:imgW,h:imgH}, func:onPaperClick});
+            elements[curElemIndex].subElements.push({pars:{x:imgPosX3,y:imgPosY,w:imgW,h:imgH}, func:onPaperClick});
         }break;
     }
 
-    function createEnemyAddressInput(posX, posY, defText) {
-        if(input.enemyAddress){
-            //input.enemyAddress.destroy();
-            input.enemyAddress = null;
-        }
-        input.enemyAddress = {
-            elem: createInput([posX,posY], mainAddressWidth-indent, mainAddressHeight-indent,
-                {font:{px:18, style:Font.CALIBRI}, color:Color.ORANGE, border:{width:1, color:Color.BLACK, radius:3, defText:defText}}),
-            pos:[posX,posY],
-        };
+
+}
+
+function createInput(posX, posY, w, h, defText, objType){
+    let inputId = null;
+    switch(objType){
+        case ObjectType.BET: inputId = "betInput"; break;
+        default /*ObjectType.ENEMY_ADDRESS*/: inputId = "enemyAddressInput"; break;
+    }
+    let elem = document.createElement("input");
+    elem.id = inputId;
+    elem.type = "text";
+    elem.style.position = "absolute";
+    elem.style.top = posY+"px";
+    elem.style.left = posX+"px";
+    elem.style.width = w+"px";
+    elem.style.height = h+"px";
+    elem.value = defText;
+    $('#inputs').append(elem);
+
+    switch(objType){
+        case ObjectType.BET: elem.style.backgroundColor = Color.GREEN; elem.style.textAlign = "center"; input.bet = elem; break;
+        default /*ObjectType.ENEMY_ADDRESS*/: elem.style.backgroundColor = Color.ORANGE; input.enemyAddress = elem; break;
     }
 
-    function createBetInput(posX, posY, w, h, defText) {
-        if(input.bet){
-            //input.bet.destroy();
-            input.bet = null;
-        }
-        input.bet = createInput([posX,posY], w, h,
-            {font:{px:18, style:Font.CALIBRI}, color:Color.GREEN, border:{width:1, color:Color.BLACK, radius:3, defText:defText}});
-
-    }
+    return elem;
 }
 
 function getFigure(state) {
@@ -492,6 +511,7 @@ function getEnemyAddresses() {
 function draw() {
     if(canvas.getContext){
         elements = [];//Очищаем хандлеры
+        hideNonCanvasElements();//Скрываем не канвас элементы
 
         //Делим просстранство на две половинки
         drawObject(ObjectType.MAIN_PARTS);
