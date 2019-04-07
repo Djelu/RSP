@@ -32,13 +32,26 @@ function resizeCanvas() {
     canvas.height = curHeight = window.innerHeight;
     whMin = canvas.width;
     if(whMin > canvas.height) whMin = canvas.height;
+	
+	
+	if (input.bet != null){
+		input.bet.style.width = 80;
+		input.bet.style.height = 25;
+		input.bet.style.left = curWidth/4-40;
+		input.bet.style.top = curHeight/2;	
+
+		input.enemyAddress.style.width = curWidth/3;
+		input.enemyAddress.style.height = 25;
+		input.enemyAddress.style.left = curWidth/2+curWidth/12;
+		input.enemyAddress.style.top = curHeight/5;			
+	}	
 
     draw();
 }
 
 function init() {
-    input.bet = createInput(curWidth/4-curWidth/70, curHeight/2-curHeight/100, curWidth/35, curHeight/35, "", ObjectType.BET);
-    input.enemyAddress = createInput(3*curWidth/4-curWidth/6, curHeight/5-curHeight/200, curWidth/4+curWidth/16+curWidth/47, 3*curHeight/100, "", ObjectType.ENEMY_ADDRESS);
+    input.bet = createInput(curWidth/4-40, curHeight/2, 80, 25, 0.01, ObjectType.BET);
+    input.enemyAddress = createInput(curWidth/2+curWidth/12, curHeight/5, curWidth/3, 25, "", ObjectType.ENEMY_ADDRESS);
 }
 
 function colorToHex(color) {
@@ -300,7 +313,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
         }break;
         case ObjectType.ADDRESSES_LIST:{
             const enemyBetIndentWidth = mainAddressWidth-enemyBetWidth;
-            const mainAddressBlock = curHeight/5+mainAddressHeight+2*indent;//высота панели ввода адреса
+            const mainAddressBlock = curHeight/5+6*indent;//высота панели ввода адреса
             const height = 26;
             const itemAddressBlock = height+indent;//высота панели выбора адреса с отступом
             if(argsObj.addresses){
@@ -333,7 +346,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                     if(addresses[i] && addresses[i].address){                        
                         context.font = "15px COURIER NEW";    
                         const bet = addresses[i].bet;
-                        const address = addresses[i].address;
+                        const address = fixText(addresses[i].address,mainAddressWidth-enemyBetWidth*2);
                         context.textAlign='left';
                         context.fillText((i+1)+". "+address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
                         context.font = "15px "+Font.CALIBRI;    
@@ -341,7 +354,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                         context.fillText(bet+" eth",pars[i][0]+enemyBetIndentWidth+enemyBetWidth-betTextIndentX,pars[i][1]+addressTextIndentY);
                         const posY = mainAddressBlock+(itemAddressBlock)*i;
                         const onclick = function(){
-                            input.enemyAddress.value = address;
+                            input.enemyAddress.value = addresses[i].address;
                             input.bet.value = bet;
                         };
                         elements[curElemIndex].subElements.push({pars:{x:posX,y:posY,w:mainAddressWidth+enemyBetWidth,h:height}, func:onclick});
@@ -360,16 +373,16 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             context.font = "22px "+Font.CALIBRI;
             context.textAlign='center';        
             context.fillStyle = Color.BLACK;
-            fillText("Bet",[posX,betInputPosY-indent*2]);
+            fillText("Bet",[posX,curHeight/2-indent*2]);
             showNonCanvasElement(ObjectType.BET);
             //Рисуем кнопки
             const betLeftButtonPosX = posX-40;
             const betRightButtonPosX = posX+40;
             const betInputHeightDiv4 = 24;
-            const betButtonPosY1 = betInputPosY+betInputHeightDiv4;
-            const betButtonPosY2 = betInputPosY;
+            const betButtonPosY1 = curHeight/2+betInputHeightDiv4;
+            const betButtonPosY2 = curHeight/2;
             const betLeftButtonPosX3 = betLeftButtonPosX-betInputHeightDiv4/2;
-            const betButtonPosY3 = betInputPosY+betInputHeightDiv4/2;
+            const betButtonPosY3 = curHeight/2+betInputHeightDiv4/2;
             const betRightButtonPosX3 = betRightButtonPosX+betInputHeightDiv4/2;
             fillTriangle([[betLeftButtonPosX,betButtonPosY1],[betLeftButtonPosX,betButtonPosY2],[betLeftButtonPosX3,betButtonPosY3]]);
             fillTriangle([[betRightButtonPosX,betButtonPosY1],[betRightButtonPosX,betButtonPosY2],[betRightButtonPosX3,betButtonPosY3]]);
@@ -379,9 +392,9 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
 
             const onLeftClick = function(){
                 if(!isNaN(input.bet.value)) {
-                    const betValue = Number(input.bet.value);
+                    var betValue = Number(input.bet.value);
                     if(betValue!=0) {
-                        input.bet.value = betValue - 1;
+                        input.bet.value = betValue - 0.01;
                     }
                 }
             };
@@ -389,7 +402,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
                 if(!isNaN(input.bet.value)) {
                     const betValue = Number(input.bet.value);
                     if(betValue!=0) {
-                        input.bet.value = betValue + 1;
+                        input.bet.value = betValue + 0.01;
                     }
                 }
             };
