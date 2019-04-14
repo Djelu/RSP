@@ -26,6 +26,7 @@ window.addEventListener('resize', resizeCanvas, false);
 
 resizeCanvas();
 init();
+metamaskCheck();
 
 function resizeCanvas() {
     canvas.width = curWidth = window.innerWidth;
@@ -123,38 +124,6 @@ function createImg(src, pos, w, h) {
         }
     }
 }
-// function createInput(pos, w, h, options) {
-//     const font = options.font;
-//     const border = options.border;
-//     if (!(pos.length == 2 && font && font.px && font.style && options.color)) {
-//         return null
-//     } else {
-//         function createCanvasInput() {
-//             let input = new CanvasInput({
-//                 x: pos[0],
-//                 y: pos[1],
-//                 width: w,
-//                 height: h,
-//                 backgroundColor: options.color,
-//                 canvas: canvas,
-//                 fontSize: font.px,
-//                 fontFamily: font.style,
-//                 // fontColor: options.color,
-//                 borderWidth: border && border.width ? border.width : undefined,
-//                 borderColor: border && border.color ? border.color : undefined,
-//                 borderRadius: border && border.radius ? border.radius : undefined,
-//                 // boxShadow: '1px 1px 0px #fff',
-//                 // innerShadow: '0px 0px 5px rgba(0, 0, 0, 0.5)',
-//                 // placeHolder: defText
-//             });
-//             if (options.defText) {
-//                 input.value = options.defText;
-//             }
-//             return input;
-//         }
-//         return createCanvasInput();
-//     }
-// }
 function plusVector(pars, vector) {
     let result = pars;
     if(Array.isArray(pars[0])){
@@ -189,7 +158,6 @@ function getSrc(figure){
     }
     return result;
 }
-
 function setState(obj) {
     for(let key in obj){
         switch(key) {
@@ -197,8 +165,18 @@ function setState(obj) {
                 if(obj[key].state){
                     curPlayerState = obj[key].state;
                 }
-                if(obj[key].figure) {
+                if(obj[key].figure){
                     curPlayerFigure = obj[key].figure;
+
+                    let num;
+                    switch(obj[key].figure) {
+                        case Figure.ROCK: {myFigureKeccak256 = "0xc22ce49e70b56bd285622d75a145185a0231c75bf5a79a50c87438ac46703c82"; num="01";}break;
+                        case Figure.SCISSORS: {myFigureKeccak256 = "0x11b9fe42140e03d40161ed63b7d96aaef3ca187986f317cfdd556b938dccb0bd"; num="02";}break;
+                        default/*Figure.PAPER*/: {myFigureKeccak256 = "0xca75793d0a6b66dee4f075111947d13b5cf19a6abdf6032aeccf0fe49ace540b"; num="03";}break;
+                    }
+                    myFullFigure = "0x090807060504"+num+"0201";
+
+                    jsAddFigure();
                 }
             }break;
             case "enemy":{
@@ -212,17 +190,6 @@ function setState(obj) {
         }
     }
     draw();
-}
-
-function getElement(type) {
-    let result = null;
-    for(let i=0; i<elements.length; i++){
-        if(elements[i].type == type){
-            result = elements[i];
-            break;
-        }
-    }
-    return result;
 }
 
 function canvasOnClick(event) {
@@ -255,7 +222,6 @@ function fixText(my_text,my_width) {
     } else    
     return my_text;
 }
-
 function hideNonCanvasElements() {
     for(let key in input){
         if(input[key] && input[key].style){
@@ -263,7 +229,6 @@ function hideNonCanvasElements() {
         }
     }
 }
-
 function showNonCanvasElement(objType) {
     let objToCheck = null;
     switch(objType) {
@@ -299,6 +264,7 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             fillTriangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[width/3,height/2]],[widthDiv20/8, 0]), Color.BLACK);
             const onclick = function(){
                 setState({player:{state:PlayerState.FIGURE_CHOICE},enemy:{state:EnemyState.ADDRESS_CHOICE}});
+                refundChoice();
             };
             elements.push({type:objType, pars:{x:0,y:0,w:width,h:height}, func:onclick});
         }break;
@@ -465,14 +431,17 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
 
             const onRockClick = function(){
                 setState({player:{figure:Figure.ROCK, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
+                confirmChoice();
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX2,y:imgPosY,w:imgW,h:imgH}, func:onRockClick});
             const onScissorsClick = function(){
                 setState({player:{figure:Figure.SCISSORS, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
+                confirmChoice();
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX1,y:imgPosY,w:imgW,h:imgH}, func:onScissorsClick});
             const onPaperClick = function(){
                 setState({player:{figure:Figure.PAPER, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
+                confirmChoice();
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX3,y:imgPosY,w:imgW,h:imgH}, func:onPaperClick});
         }break;
