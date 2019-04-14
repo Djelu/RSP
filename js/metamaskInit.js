@@ -1,3 +1,5 @@
+const Hash = {NULL: "0x0000000000000000000000000000000000000000000000000000000000000000"};
+
 let myFullFigure;
 let myFigureKeccak256;
 const contractAddress = "0xbd277B22F502a60C49f3F88C9B317ac987f0c861";
@@ -143,14 +145,15 @@ let contract;
 let metamaskExists = false;
 
 function metamaskCheck(){
+    let result = false;
     //Проверка наличия метамаска
     if (typeof web3 !== "undefined") {
         window.web3 = new Web3(web3.currentProvider);
         contract = web3.eth.contract(contractAbi).at(contractAddress);
         metamaskExists = true;
-        input.bet.value = "0.01";
-        input.enemyAddress.value = "0x3E61878F2F8CcBA83345E1f92eE11822eB62A166";
+        result = true;
     } else { alert("Need MetaMask!"); }
+    return result;
 }
 
 function jsAddFigure(){
@@ -182,7 +185,7 @@ function jsAddFigure(){
 
 function confirmChoice(){//подтвердить
     let result = false;
-    if (metamaskExists){
+    if (metamaskExists && getFigureHash()!=Hash.NULL){
         contract.Start_Fighting_Figures( myFullFigure, {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){
             if(!err){
                 result = true;
@@ -209,9 +212,9 @@ function refundChoice(){//возврат
     return result;
 }
 
-function blockNumber() {
+function getBlockNumber() {
     let result = null;
-    if (metamask_exists == true) {
+    if (metamaskExists) {
         contract.block_number(web3.eth.accounts[0],function(err,res){
             result = res;
             console.log(res);
@@ -220,9 +223,36 @@ function blockNumber() {
     return result;
 }
 
-function webBlockNumber() {
+function getFigureHash() {
+    let result = "0x0000000000000000000000000000000000000000000000000000000000000000";
+    if(metamaskExists){
+        contract.figure_hash(input.enemyAddress.value,function(err,res){
+            result = res;
+            console.log(res);
+        });
+    }
+    return result;
+}
+
+function getAddressesList(size) {
+    let result = [];
+    for(let i=0; i<size; i++) {
+        contract.address_list(i, function (err, res) {
+            if (!err) {
+                if(res!=Hash.NULL) {
+                    result.push(res);
+                }
+            } else {
+                alert("index:["+i+"] \n" + err);
+            }
+        });
+    }
+    return result;
+}
+
+function getWebBlockNumber() {
     let result = null;
-    if (metamask_exists == true) {
+    if (metamaskExists) {
         web3.eth.getBlockNumber(function (error, res) {
             if(!error) {
                 result = res;

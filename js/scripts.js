@@ -26,9 +26,10 @@ let checkInterval = null;
 canvas.addEventListener('click', canvasOnClick, false);
 window.addEventListener('resize', resizeCanvas, false);
 
-resizeCanvas();
-init();
-metamaskCheck();
+if(metamaskCheck()) {
+    resizeCanvas();
+    init();
+}
 
 function resizeCanvas() {
     canvas.width = curWidth = window.innerWidth;
@@ -55,6 +56,9 @@ function resizeCanvas() {
 function init() {
     input.bet = createInput(curWidth/4-40, curHeight/2, 80, 25, 0.01, ObjectType.BET);
     input.enemyAddress = createInput(curWidth/2+curWidth/12, curHeight/5, curWidth/3, 25, "", ObjectType.ENEMY_ADDRESS);
+
+    input.bet.value = "0.01";
+    input.enemyAddress.value = "0x3E61878F2F8CcBA83345E1f92eE11822eB62A166";
 }
 
 function colorToHex(color) {
@@ -491,18 +495,15 @@ function getFigure(state) {
     return result;
 }
 
-function getEnemyAddresses() {
-    return {addresses:[
-        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0.001},
-        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:5},
-        {address:"0x3ca4917f37360574d8dc0c65e0d0930ce27f54e8",bet:0.03}
-    ]}
+function getEnemyAddresses(size) {
+    return getAddressesList(size);
 }
 
 function checkIfRefundReady() {
     checkInterval = setInterval(function () {
-        const blockNumber = blockNumber();
-        if(blockNumber == "4209277"){
+        const blockNumber = getBlockNumber();
+        const webBlockNumber = getWebBlockNumber();
+        if(Math.abs(blockNumber-webBlockNumber) < 128){
             setState({})
         }
     }, 600000);//10минут
@@ -544,7 +545,7 @@ function draw() {
                 //Место для ввода адреса противника
                 drawObject(ObjectType.ENEMY_ADDRESS);
                 //Список адресов
-                drawObject(ObjectType.ADDRESSES_LIST,getEnemyAddresses());
+                drawObject(ObjectType.ADDRESSES_LIST,getEnemyAddresses(10));
             }break;
             case EnemyState.WAIT_ENEMY_CHOICE:{
                 //многоточие
