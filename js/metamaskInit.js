@@ -149,7 +149,7 @@ function metamaskCheck(){
         contract = web3.eth.contract(contractAbi).at(contractAddress);
         metamaskExists = true;
         input.bet.value = "0.01";
-        input.enemyAddress.value = "0x7d26358bacbB5a1F5aaBbC01d67B7Ff6eEAC5F9C";
+        input.enemyAddress.value = "0x3E61878F2F8CcBA83345E1f92eE11822eB62A166";
     } else { alert("Need MetaMask!"); }
 }
 
@@ -181,14 +181,57 @@ function jsAddFigure(){
 }
 
 function confirmChoice(){//подтвердить
+    let result = false;
     if (metamaskExists){
-        contract.Start_Fighting_Figures( myFullFigure, {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){});
+        contract.Start_Fighting_Figures( myFullFigure, {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){
+            if(!err){
+                result = true;
+            }else{
+                alert(err);
+            }
+        });
     }
+    return result;
 }
 
 function refundChoice(){//возврат
+    clearInterval(checkInterval);//Очищаем таймер проверки
+    let result = false;
     if (metamaskExists){
-        contract.Return_My_Eth( {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){} );
+        contract.Return_My_Eth( {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){
+            if(!err){
+                result = true;
+            }else{
+                alert(err);
+            }
+        });
     }
+    return result;
+}
+
+function blockNumber() {
+    let result = null;
+    if (metamask_exists == true) {
+        contract.block_number(web3.eth.accounts[0],function(err,res){
+            result = res;
+            console.log(res);
+        });
+    }
+    return result;
+}
+
+function webBlockNumber() {
+    let result = null;
+    if (metamask_exists == true) {
+        web3.eth.getBlockNumber(function (error, res) {
+            if(!error) {
+                result = res;
+                console.log(res);
+            }else{
+                alert(error);
+            }
+        });
+    }
+    return result;
 }
 

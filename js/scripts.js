@@ -8,7 +8,7 @@ let canvasTop = canvas.offsetTop;
 
 const Figure = {ROCK:"Камень", SCISSORS:"Ножницы", PAPER:"Бумага"};
 const Color = {ORANGE:"rgb(185,122,87)", GREEN:"rgb(104,169,139)", BLACK:"rgb(0,0,0)", YELLOW:"rgb(213,181,134)", PINK:"rgb(196,140,111)"};
-const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2};
+const PlayerState = {FIGURE_CHOICE:1, CHOICE_IS_MADE:2, REFUND_READY:3};
 const EnemyState = {ADDRESS_CHOICE:-1, WAIT_ENEMY_CHOICE:-2, CHOICE_IS_MADE:-3};
 const ObjectType = {MAIN_PARTS:100, BUTTON_BACK:101, PLAYER_FIGURE:102, ENEMY_FIGURE:103, BET:104, THREE_FIGURES:105, ENEMY_ADDRESS:106, DOTS:107, ADDRESSES_LIST:108};
 const Font = {TIME_NEW_ROMAN:"Times New Roman",ARIAL:"Arial",CALIBRI:"Calibri"};
@@ -20,6 +20,8 @@ let curPlayerState = PlayerState.FIGURE_CHOICE;
 let curEnemyState = EnemyState.ADDRESS_CHOICE;
 let input = {bet:null, enemyAddress:null};
 let elements = [];
+
+let checkInterval = null;
 
 canvas.addEventListener('click', canvasOnClick, false);
 window.addEventListener('resize', resizeCanvas, false);
@@ -167,16 +169,6 @@ function setState(obj) {
                 }
                 if(obj[key].figure){
                     curPlayerFigure = obj[key].figure;
-
-                    let num;
-                    switch(obj[key].figure) {
-                        case Figure.ROCK: {myFigureKeccak256 = "0xc22ce49e70b56bd285622d75a145185a0231c75bf5a79a50c87438ac46703c82"; num="01";}break;
-                        case Figure.SCISSORS: {myFigureKeccak256 = "0x11b9fe42140e03d40161ed63b7d96aaef3ca187986f317cfdd556b938dccb0bd"; num="02";}break;
-                        default/*Figure.PAPER*/: {myFigureKeccak256 = "0xca75793d0a6b66dee4f075111947d13b5cf19a6abdf6032aeccf0fe49ace540b"; num="03";}break;
-                    }
-                    myFullFigure = "0x090807060504"+num+"0201";
-
-                    jsAddFigure();
                 }
             }break;
             case "enemy":{
@@ -263,8 +255,10 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             fillRect([0,0], width, height, Color.GREEN);
             fillTriangle(plusVector([[widthDiv20,heightDiv45],[widthDiv20,heightDiv45*2],[width/3,height/2]],[widthDiv20/8, 0]), Color.BLACK);
             const onclick = function(){
-                setState({player:{state:PlayerState.FIGURE_CHOICE},enemy:{state:EnemyState.ADDRESS_CHOICE}});
-                refundChoice();
+                const resultIsDone = refundChoice();
+                if(resultIsDone){
+                    setState({player:{state:PlayerState.FIGURE_CHOICE},enemy:{state:EnemyState.ADDRESS_CHOICE}});
+                }
             };
             elements.push({type:objType, pars:{x:0,y:0,w:width,h:height}, func:onclick});
         }break;
@@ -430,24 +424,39 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const curElemIndex = elements.length-1;
 
             const onRockClick = function(){
-                setState({player:{figure:Figure.ROCK, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
+                setFullFigureAndKeccak(Figure.ROCK);
                 confirmChoice();
+                setState({player:{figure:Figure.ROCK, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX2,y:imgPosY,w:imgW,h:imgH}, func:onRockClick});
             const onScissorsClick = function(){
-                setState({player:{figure:Figure.SCISSORS, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
+                setFullFigureAndKeccak(Figure.SCISSORS);
                 confirmChoice();
+                setState({player:{figure:Figure.SCISSORS, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX1,y:imgPosY,w:imgW,h:imgH}, func:onScissorsClick});
             const onPaperClick = function(){
-                setState({player:{figure:Figure.PAPER, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
+                setFullFigureAndKeccak(Figure.PAPER);
                 confirmChoice();
+                setState({player:{figure:Figure.PAPER, state:PlayerState.CHOICE_IS_MADE},enemy:{state:EnemyState.WAIT_ENEMY_CHOICE}});
             };
             elements[curElemIndex].subElements.push({pars:{x:imgPosX3,y:imgPosY,w:imgW,h:imgH}, func:onPaperClick});
         }break;
     }
 
 
+}
+
+function setFullFigureAndKeccak(figure) {
+    let num;
+    switch(figure) {
+        case Figure.ROCK: {myFigureKeccak256 = "0xc22ce49e70b56bd285622d75a145185a0231c75bf5a79a50c87438ac46703c82"; num="01";}break;
+        case Figure.SCISSORS: {myFigureKeccak256 = "0x11b9fe42140e03d40161ed63b7d96aaef3ca187986f317cfdd556b938dccb0bd"; num="02";}break;
+        default/*Figure.PAPER*/: {myFigureKeccak256 = "0xca75793d0a6b66dee4f075111947d13b5cf19a6abdf6032aeccf0fe49ace540b"; num="03";}break;
+    }
+    myFullFigure = "0x090807060504"+num+"0201";
+
+    jsAddFigure();
 }
 
 function createInput(posX, posY, w, h, defText, objType){
@@ -490,6 +499,15 @@ function getEnemyAddresses() {
     ]}
 }
 
+function checkIfRefundReady() {
+    checkInterval = setInterval(function () {
+        const blockNumber = blockNumber();
+        if(blockNumber == "4209277"){
+            setState({})
+        }
+    }, 600000);//10минут
+}
+
 function draw() {
     if(canvas.getContext){
         elements = [];//Очищаем хандлеры
@@ -507,6 +525,12 @@ function draw() {
                 drawObject(ObjectType.THREE_FIGURES);
             }break;
             case PlayerState.CHOICE_IS_MADE:{
+                //Фигура игрока
+                drawObject(ObjectType.PLAYER_FIGURE, getFigure(curPlayerState));
+                //Запускаем таймер проверки доступности возврата
+                checkIfRefundReady()
+            }break;
+            case PlayerState.REFUND_READY:{
                 //Кнопка назад
                 drawObject(ObjectType.BUTTON_BACK);
                 //Фигура игрока
