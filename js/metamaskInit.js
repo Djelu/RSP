@@ -1,4 +1,5 @@
 const Hash = {NULL: "0x0000000000000000000000000000000000000000000000000000000000000000"};
+const Address = {NULL: "0x0000000000000000000000000000000000000000"};
 
 let myFullFigure;
 let myFigureKeccak256;
@@ -186,12 +187,14 @@ function jsAddFigure(){
 function confirmChoice(){//подтвердить
     let result = false;
     if (metamaskExists && getFigureHash()!=Hash.NULL){
+        timerStop=true;
         contract.Start_Fighting_Figures( myFullFigure, {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){
             if(!err){
                 result = true;
             }else{
                 alert(err);
             }
+            timerStop=false;
         });
     }
     return result;
@@ -201,12 +204,14 @@ function refundChoice(){//возврат
     clearInterval(checkInterval);//Очищаем таймер проверки
     let result = false;
     if (metamaskExists){
+        timerStop=true;
         contract.Return_My_Eth( {from: web3.eth.accounts[0], gasPrice: 2000000000, value: 0}, function(err, res){
             if(!err){
                 result = true;
             }else{
                 alert(err);
             }
+            timerStop=false;
         });
     }
     return result;
@@ -215,9 +220,11 @@ function refundChoice(){//возврат
 function getBlockNumber() {
     let result = null;
     if (metamaskExists) {
+        timerStop=true;
         contract.block_number(web3.eth.accounts[0],function(err,res){
             result = res;
             console.log(res);
+            timerStop=false;
         });
     }
     return result;
@@ -235,19 +242,32 @@ function getFigureHash() {
 }
 
 function getAddressesList(size) {
-    let result = [];
-    for(let i=0; i<size; i++) {
-        contract.address_list(i, function (err, res) {
-            if (!err) {
-                if(res!=Hash.NULL) {
-                    result.push(res);
+    enemyAddresses = [];
+    if(metamaskExists) {
+        for (let i = 0; i < size; i++) {
+            timerStop=true;
+            contract.address_list(i, function (err, resAddr) {
+                if (!err) {
+                    if(resAddr != Address.NULL) {
+                        contract.rate_amount(i, function (err, resRate) {
+                            if (!err) {
+                                if(resRate > 0) {
+                                    addressesList.enemyAddresses.push(resAddr);
+                                    addressesList.enemyRates.push(resRate);
+                                    draw();
+                                }
+                            } else {
+                                alert("rate index:[" + i + "] \n" + err);
+                            }
+                        });
+                    }
+                } else {
+                    alert("address index:[" + i + "] \n" + err);
                 }
-            } else {
-                alert("index:["+i+"] \n" + err);
-            }
-        });
+                timerStop=false;
+            });
+        }
     }
-    return result;
 }
 
 function getWebBlockNumber() {

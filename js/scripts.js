@@ -20,6 +20,9 @@ let curPlayerState = PlayerState.FIGURE_CHOICE;
 let curEnemyState = EnemyState.ADDRESS_CHOICE;
 let input = {bet:null, enemyAddress:null};
 let elements = [];
+let addressesList = {enemyAddresses: [], enemyRates: []};
+let timerStop = true;
+
 
 let checkInterval = null;
 
@@ -58,7 +61,15 @@ function init() {
     input.enemyAddress = createInput(curWidth/2+curWidth/12, curHeight/5, curWidth/3, 25, "", ObjectType.ENEMY_ADDRESS);
 
     input.bet.value = "0.01";
-    input.enemyAddress.value = "0x3E61878F2F8CcBA83345E1f92eE11822eB62A166";
+    input.enemyAddress.value = "0x7d26358bacbB5a1F5aaBbC01d67B7Ff6eEAC5F9C";
+
+    timerStop = false;
+    getAddressesList(10);
+    let addressesUpdater = setInterval(function () {
+        if(!timerStop){
+            getAddressesList(10);
+        }
+    }, 60000);
 }
 
 function colorToHex(color) {
@@ -280,51 +291,51 @@ function drawObject(objType, argsObj) {//Рисуем объект соглас�
             const mainAddressBlock = curHeight/5+6*indent;//высота панели ввода адреса
             const height = 26;
             const itemAddressBlock = height+indent;//высота панели выбора адреса с отступом
-            if(argsObj.addresses){
-                const addresses = argsObj.addresses;
-                const posX = halfWidth+indentFromCenterX;
-                let pars = [];
-                //Рисуем желтые прямоугольники
-                context.fillStyle = Color.YELLOW;
-                for(let i=0; i<addresses.length; i++) {
-                    const pos = [posX,mainAddressBlock+(itemAddressBlock)*i];
+            const addresses = addressesList.enemyAddresses;
+            const posX = halfWidth+indentFromCenterX;
+            let pars = [];
+            //Рисуем желтые прямоугольники
+            context.fillStyle = Color.YELLOW;
+            for(let i=0; i<addresses.length; i++) {
+                if(addresses[i] && addressesList.enemyRates[i]) {
+                    const pos = [posX, mainAddressBlock + (itemAddressBlock) * i];
                     fillRect(pos, mainAddressWidth, height);
                     pars.push(pos);
                 }
-                elements.push({type:objType, pars:{x:posX,y:mainAddressBlock,w:mainAddressWidth,h:(height+indent)*addresses.length}, func:onclick, subElements:[]});
-                const curElemIndex = elements.length-1;
-                //Рисуем розовые прямоугольники
-                context.fillStyle = Color.PINK;
-                for(let i=0; i<addresses.length; i++) {
-                    fillRect([pars[i][0]+enemyBetIndentWidth,pars[i][1]], enemyBetWidth, height);
+            }
+            elements.push({type:objType, pars:{x:posX,y:mainAddressBlock,w:mainAddressWidth,h:(height+indent)*addresses.length}, func:onclick, subElements:[]});
+            const curElemIndex = elements.length-1;
+            //Рисуем розовые прямоугольники
+            context.fillStyle = Color.PINK;
+            for(let i=0; i<addresses.length; i++) {
+                if(addresses[i] && addressesList.enemyRates[i]) {
+                    fillRect([pars[i][0] + enemyBetIndentWidth, pars[i][1]], enemyBetWidth, height);
                 }
+            }
 
-                //Рисуем текст адресов
-                const addressTextIndentY = height/3*2;
-                const addressTextIndentX = mainAddressWidth/30;
-                const betTextIndentX = enemyBetWidth/10;
+            //Рисуем текст адресов
+            const addressTextIndentY = height/3*2;
+            const addressTextIndentX = mainAddressWidth/30;
+            const betTextIndentX = enemyBetWidth/10;
 
-                context.textAlign='left';
-                context.fillStyle = Color.BLACK;
-                for (let i=0; i<addresses.length; i++) {
-                    if(addresses[i] && addresses[i].address){                        
-                        context.font = "15px COURIER NEW";    
-                        const bet = addresses[i].bet;
-                        const address = fixText(addresses[i].address,mainAddressWidth-enemyBetWidth*2);
-                        context.textAlign='left';
-                        context.fillText((i+1)+". "+address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
-                        context.font = "15px "+Font.CALIBRI;    
-                        context.textAlign='right';
-                        context.fillText(bet+" eth",pars[i][0]+enemyBetIndentWidth+enemyBetWidth-betTextIndentX,pars[i][1]+addressTextIndentY);
-                        const posY = mainAddressBlock+(itemAddressBlock)*i;
-                        const onclick = function(){
-                            input.enemyAddress.value = addresses[i].address;
-                            input.bet.value = bet;
-                        };
-                        elements[curElemIndex].subElements.push({pars:{x:posX,y:posY,w:mainAddressWidth+enemyBetWidth,h:height}, func:onclick});
-                    }else{
-                        break;
-                    }
+            context.textAlign='left';
+            context.fillStyle = Color.BLACK;
+            for (let i=0; i<addresses.length; i++) {
+                if(addresses[i] && addressesList.enemyRates[i]){
+                    const bet = addressesList.enemyRates[i];
+                    context.font = "15px COURIER NEW";
+                    const address = fixText(addresses[i],mainAddressWidth-enemyBetWidth*2);
+                    context.textAlign='left';
+                    context.fillText((i+1)+". "+address,pars[i][0]+addressTextIndentX,pars[i][1]+addressTextIndentY);
+                    context.font = "15px "+Font.CALIBRI;
+                    context.textAlign='right';
+                    context.fillText(bet+" eth",pars[i][0]+enemyBetIndentWidth+enemyBetWidth-betTextIndentX,pars[i][1]+addressTextIndentY);
+                    const posY = mainAddressBlock+(itemAddressBlock)*i;
+                    const onclick = function(){
+                        input.enemyAddress.value = addresses[i];
+                        input.bet.value = bet;
+                    };
+                    elements[curElemIndex].subElements.push({pars:{x:posX,y:posY,w:mainAddressWidth+enemyBetWidth,h:height}, func:onclick});
                 }
             }
         }break;
@@ -495,9 +506,9 @@ function getFigure(state) {
     return result;
 }
 
-function getEnemyAddresses(size) {
-    return getAddressesList(size);
-}
+// function getEnemyAddresses(size) {
+//     return {addresses: getAddressesList(size)};
+// }
 
 function checkIfRefundReady() {
     checkInterval = setInterval(function () {
@@ -545,7 +556,7 @@ function draw() {
                 //Место для ввода адреса противника
                 drawObject(ObjectType.ENEMY_ADDRESS);
                 //Список адресов
-                drawObject(ObjectType.ADDRESSES_LIST,getEnemyAddresses(10));
+                drawObject(ObjectType.ADDRESSES_LIST);
             }break;
             case EnemyState.WAIT_ENEMY_CHOICE:{
                 //многоточие
