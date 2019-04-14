@@ -1,6 +1,6 @@
 let myFullFigure;
 let myFigureKeccak256;
-const contractAddress = "0xbb69Fd88251b2658792b4E2681025C809E66Bc9C";
+const contractAddress = "0xbd277B22F502a60C49f3F88C9B317ac987f0c861";
 const contractAbi = [
     {
         "constant": false,
