@@ -249,11 +249,11 @@ function getAddressesList(size) {
             contract.address_list(i, function (err, resAddr) {
                 if (!err) {
                     if(resAddr != Address.NULL) {
-                        contract.rate_amount(i, function (err, resRate) {
+                        contract.rate_amount(resAddr, function (err, resRate) {
                             if (!err) {
                                 if(resRate > 0) {
                                     addressesList.enemyAddresses.push(resAddr);
-                                    addressesList.enemyRates.push(resRate);
+                                    addressesList.enemyRates.push(resRate/1000000000000000000);
                                     draw();
                                 }
                             } else {
