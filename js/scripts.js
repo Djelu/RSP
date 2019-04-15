@@ -493,7 +493,7 @@ function createInput(posX, posY, w, h, defText, objType){
 
     switch(objType){
         case ObjectType.BET: elem.style.backgroundColor = Color.GREEN; elem.style.textAlign = "center"; input.bet = elem; break;
-        default /*ObjectType.ENEMY_ADDRESS*/: elem.style.backgroundColor = Color.ORANGE; input.enemyAddress = elem; break;
+        default /*ObjectType.ENEMY_ADDRESS*/: /*elem.style.color = "#FFFFFF";*/ elem.style.backgroundColor = Color.PINK; elem.style.textAlign = "center"; input.enemyAddress = elem; break;
     }
 
     return elem;
